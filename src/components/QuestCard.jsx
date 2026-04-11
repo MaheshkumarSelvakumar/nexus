@@ -1,9 +1,9 @@
-function QuestCard({ quest }) {
+function QuestCard({ quest, onDelete, onStart, onComplete }) {
 
   const difficultyConfig = {
-    easy:      { label: 'EASY',       xp: 10,  color: '#00ff88' },
-    hard:      { label: 'HARD',       xp: 25,  color: '#06b6d4' },
-    legendary: { label: 'LEGENDARY',  xp: 50,  color: '#7c3aed' },
+    easy:      { label: 'EASY',      xp: 10,  color: '#00ff88' },
+    hard:      { label: 'HARD',      xp: 25,  color: '#06b6d4' },
+    legendary: { label: 'LEGENDARY', xp: 50,  color: '#7c3aed' },
   };
 
   const config = difficultyConfig[quest.difficulty];
@@ -19,8 +19,7 @@ function QuestCard({ quest }) {
         >
           {config.label}
         </span>
-        <span className="text-xs font-mono"
-          style={{ color: config.color }}>
+        <span className="text-xs font-mono" style={{ color: config.color }}>
           +{config.xp} XP
         </span>
       </div>
@@ -30,21 +29,46 @@ function QuestCard({ quest }) {
         {quest.title}
       </h3>
 
-      {/* Quest subject */}
+      {/* Subject */}
       <p className="text-[#00ff88]/40 text-xs font-mono mb-4">
         {quest.subject}
       </p>
 
-      {/* Action buttons */}
+      {/* Buttons — change based on status */}
       <div className="flex gap-2">
-        <button className="flex-1 py-1.5 text-xs font-bold border border-[#00ff88]/40 text-[#00ff88] rounded hover:bg-[#00ff88] hover:text-black transition-all duration-300">
-          START
-        </button>
-        <button className="py-1.5 px-3 text-xs font-bold border border-red-500/40 text-red-500 rounded hover:bg-red-500 hover:text-black transition-all duration-300">
+        
+        {quest.status === "todo" && (
+          <button
+            onClick={() => onStart(quest.id)}
+            className="flex-1 py-1.5 text-xs font-bold border border-[#00ff88]/40 text-[#00ff88] rounded hover:bg-[#00ff88] hover:text-black transition-all duration-300"
+          >
+            START
+          </button>
+        )}
+
+        {quest.status === "inprogress" && (
+          <button
+            onClick={() => onComplete(quest.id)}
+            className="flex-1 py-1.5 text-xs font-bold border border-[#7c3aed]/40 text-[#7c3aed] rounded hover:bg-[#7c3aed] hover:text-white transition-all duration-300"
+          >
+            COMPLETE ⚡
+          </button>
+        )}
+
+        {quest.status === "done" && (
+          <div className="flex-1 py-1.5 text-xs font-bold text-center text-[#00ff88]/40">
+            ✅ COMPLETED
+          </div>
+        )}
+
+        <button
+          onClick={() => onDelete(quest.id)}
+          className="py-1.5 px-3 text-xs font-bold border border-red-500/40 text-red-500 rounded hover:bg-red-500 hover:text-black transition-all duration-300"
+        >
           ✕
         </button>
-      </div>
 
+      </div>
     </div>
   );
 }

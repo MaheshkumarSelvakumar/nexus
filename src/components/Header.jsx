@@ -1,4 +1,4 @@
-function Header() {
+function Header({ onAddClick }) {
   return (
     <header className="flex items-center justify-between px-6 py-2 border-b border-[#00ff88]/20">
       
@@ -11,7 +11,7 @@ function Header() {
         }}
       />
 
-      <button className="px-3 py-1.5 border border-[#00ff88] text-[#00ff88] text-sm font-bold rounded hover:bg-[#00ff88] hover:text-black transition-all duration-300">
+      <button onClick={onAddClick} className="px-3 py-1.5 border border-[#00ff88] text-[#00ff88] text-sm font-bold rounded hover:bg-[#00ff88] hover:text-black transition-all duration-300">
         + ADD QUEST
       </button>
 

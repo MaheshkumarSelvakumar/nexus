@@ -3,8 +3,22 @@ import Header from './components/Header';
 import XPBar from './components/XPBar';
 import QuestCard from './components/QuestCard';
 import AddQuestForm from './components/AddQuestForm';
+import ProfessionSelector from './components/ProfessionSelector';
 
 function App() {
+
+  // ── PROFESSION LEVELS ──
+  const professionLevels = {
+    webdev:   ["HTML Apprentice", "CSS Warrior", "JS Ninja", "React Master", "Tech Lead 🔥"],
+    designer: ["Sketch Rookie", "Wireframe Artist", "Prototype Pro", "Design Lead", "Creative Director 🔥"],
+    data:     ["Data Rookie", "Python Padawan", "ML Explorer", "AI Engineer", "Data Wizard 🔥"],
+    security: ["Script Kiddie", "Firewall Guard", "Pen Tester", "Security Architect", "Chief Hacker 🔥"],
+    mobile:   ["App Rookie", "UI Builder", "API Connector", "App Publisher", "Mobile Architect 🔥"],
+    gamedev:  ["Pixel Rookie", "Unity Apprentice", "Game Designer", "Engine Builder", "Game Director 🔥"],
+  };
+
+  // ── PROFESSION STATE ──
+  const [profession, setProfession] = useState(null);
 
   // ── QUEST STATE ──
   const [quests, setQuests] = useState([
@@ -14,7 +28,7 @@ function App() {
   ]);
 
   // ── XP STATE ──
-  const [xp, setXp] = useState(150);
+  const [xp, setXp] = useState(0);
 
   // ── SHOW FORM STATE ──
   const [showForm, setShowForm] = useState(false);
@@ -26,11 +40,26 @@ function App() {
 
   // ── LEVEL SYSTEM ──
   const getLevel = (xp) => {
-    if (xp < 100) return { level: 1, title: "Beginner Coder" };
-    if (xp < 250) return { level: 2, title: "Junior Dev" };
-    if (xp < 500) return { level: 3, title: "Mid Developer" };
-    if (xp < 1000) return { level: 4, title: "Senior Engineer" };
-    return { level: 5, title: "Tech Lead 🔥" };
+  let titles;
+
+  if (profession && profession.startsWith("custom_")) {
+    const name = profession.replace("custom_", "");
+    titles = [
+      `${name} Rookie`,
+      `${name} Apprentice`,
+      `${name} Pro`,
+      `${name} Expert`,
+      `${name} Master 🔥`,
+    ];
+  } else {
+    titles = professionLevels[profession] || professionLevels.webdev;
+  }
+
+  if (xp < 100)  return { level: 1, title: titles[0] };
+  if (xp < 300)  return { level: 2, title: titles[1] };
+  if (xp < 600)  return { level: 3, title: titles[2] };
+  if (xp < 1000) return { level: 4, title: titles[3] };
+  return         { level: 5, title: titles[4] };
   };
 
   const { level, title } = getLevel(xp);
@@ -69,10 +98,15 @@ function App() {
   return (
     <div className="min-h-screen bg-[#0a0a0f] text-white">
 
+      {/* Show profession selector on first visit */}
+      {!profession && (
+        <ProfessionSelector onSelect={(p) => setProfession(p)} />
+      )}
+
       <Header onAddClick={() => setShowForm(true)} />
       <XPBar xp={xp} level={level} title={title} />
 
-      {/* Add Quest Form — shows as overlay when showForm is true */}
+      {/* Add Quest Form */}
       {showForm && (
         <AddQuestForm
           onAdd={addQuest}

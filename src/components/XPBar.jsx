@@ -1,7 +1,12 @@
 function XPBar({xp, level, title}) {
 
-    const xpForNextLevel = level * 100;
-    const Percentage = Math.min((xp / xpForNextLevel) * 100, 100);
+    const xpThresholds = [0, 100, 300, 600, 1000];
+    const xpForNextLevel = xpThresholds[level] || 1000;
+    const xpForCurrentLevel = xpThresholds[level - 1] || 0;
+    const Percentage = Math.min(
+        ((xp - xpForCurrentLevel) / (xpForNextLevel - xpForCurrentLevel)) * 100,
+        100
+    );
 
     return (
         <div className="px-8 py-4 border-b border-[#00ff88]/20">

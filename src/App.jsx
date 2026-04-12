@@ -49,6 +49,14 @@ function App() {
     setQuests([...quests, newQuest]);
   };
 
+  // ── RESET APP ──
+  const resetApp = () => {
+    localStorage.clear();
+    setProfession(null);
+    setQuests([]);
+    setXp(0);
+  };
+
   // ── SAVE TO LOCALSTORAGE ──
   useEffect(() => {
     if (profession) {
@@ -137,7 +145,7 @@ function App() {
         <ProfessionSelector onSelect={(p) => setProfession(p)} />
       )}
 
-      <Header onAddClick={() => setShowForm(true)} />
+      <Header onAddClick={() => setShowForm(true)} onReset={resetApp} />
       <XPBar xp={xp} level={level} title={title} />
 
       {/* Level up notification */}

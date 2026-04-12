@@ -2,6 +2,7 @@ function Header({ onAddClick, onReset }) {
   return (
     <header className="flex items-center justify-between px-6 py-2 border-b border-[#00ff88]/20">
       
+      {/* Logo */}
       <img 
         src="/nexus-logo.png" 
         alt="NEXUS"
@@ -11,10 +12,7 @@ function Header({ onAddClick, onReset }) {
         }}
       />
 
-      <button onClick={onAddClick} className="px-3 py-1.5 border border-[#00ff88] text-[#00ff88] text-sm font-bold rounded hover:bg-[#00ff88] hover:text-black transition-all duration-300">
-        + ADD QUEST
-      </button>
-
+      {/* Right side buttons */}
       <div className="flex items-center gap-3">
         <button
           onClick={onReset}
@@ -24,7 +22,8 @@ function Header({ onAddClick, onReset }) {
         </button>
         <button
           onClick={onAddClick}
-          className="px-3 py-1.5 border border-[#00ff88] text-[#00ff88] text-sm font-bold rounded hover:bg-[#00ff88] hover:text-black transition-all duration-300">
+          className="px-3 py-1.5 border border-[#00ff88] text-[#00ff88] text-sm font-bold rounded hover:bg-[#00ff88] hover:text-black transition-all duration-300"
+        >
           + ADD QUEST
         </button>
       </div>

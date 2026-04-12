@@ -25,11 +25,7 @@ function App() {
   // ── QUEST STATE ──
   const [quests, setQuests] = useState(() => {
     const saved = localStorage.getItem('nexus-quests');
-    return saved ? JSON.parse(saved) : [
-      { id: 1, title: "Learn useState Hook", subject: "React", difficulty: "hard", status: "todo" },
-      { id: 2, title: "Build Kanban UI", subject: "CSS", difficulty: "legendary", status: "todo" },
-      { id: 3, title: "Setup GitHub", subject: "Git", difficulty: "easy", status: "inprogress" },
-    ];
+    return saved ? JSON.parse(saved) : [];
   });
 
   // ── XP STATE ──

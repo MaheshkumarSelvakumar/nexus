@@ -3,9 +3,25 @@ import Header from './components/Header';
 import XPBar from './components/XPBar';
 import QuestCard from './components/QuestCard';
 import AddQuestForm from './components/AddQuestForm';
-import ProfessionSelector from './components/ProfessionSelector';
+import AuthScreen from './components/AuthScreen';
+import { getQuests, createQuest, updateQuest, deleteQuest } from './services/api';
 
 function App() {
+
+  // ── AUTH STATE ──
+  const [token, setToken] = useState(() => localStorage.getItem('nexus-token'));
+  const [user, setUser] = useState(() => {
+    const saved = localStorage.getItem('nexus-user');
+    return saved ? JSON.parse(saved) : null;
+  });
+
+  // ── QUEST STATE ──
+  const [quests, setQuests] = useState([]);
+
+  // ── UI STATE ──
+  const [showForm, setShowForm] = useState(false);
+  const [levelUpMsg, setLevelUpMsg] = useState(false);
+  const [_loading, setLoading] = useState(false);
 
   // ── PROFESSION LEVELS ──
   const professionLevels = {
@@ -17,72 +33,16 @@ function App() {
     gamedev:  ["Pixel Rookie", "Unity Apprentice", "Game Designer", "Engine Builder", "Game Director"],
   };
 
-  // ── PROFESSION STATE ──
-  const [profession, setProfession] = useState(() => {
-    return localStorage.getItem('nexus-profession') || null;
-  });
-
-  // ── QUEST STATE ──
-  const [quests, setQuests] = useState(() => {
-    const saved = localStorage.getItem('nexus-quests');
-    return saved ? JSON.parse(saved) : [];
-  });
-
-  // ── XP STATE ──
-  const [xp, setXp] = useState(() => {
-    const saved = localStorage.getItem('nexus-xp');
-    return saved ? JSON.parse(saved) : 0;
-  });
-
-  // ── SHOW FORM STATE ──
-  const [showForm, setShowForm] = useState(false);
-
-  // ── LEVEL UP NOTIFICATION STATE ──
-  const [levelUpMsg, setLevelUpMsg] = useState(false);
-
-  // ── ADD QUEST ──
-  const addQuest = (newQuest) => {
-    setQuests([...quests, newQuest]);
-  };
-
-  // ── RESET APP ──
-  const resetApp = () => {
-    localStorage.clear();
-    setProfession(null);
-    setQuests([]);
-    setXp(0);
-  };
-
-  // ── SAVE TO LOCALSTORAGE ──
-  useEffect(() => {
-    if (profession) {
-      localStorage.setItem('nexus-profession', profession);
-    }
-  }, [profession]);
-
-  useEffect(() => {
-    localStorage.setItem('nexus-quests', JSON.stringify(quests));
-  }, [quests]);
-
-  useEffect(() => {
-    localStorage.setItem('nexus-xp', JSON.stringify(xp));
-  }, [xp]);
-
   // ── LEVEL SYSTEM ──
   const getLevel = (xp) => {
+    const prof = user?.profession || 'webdev';
     let titles;
 
-    if (profession && profession.startsWith("custom_")) {
-      const name = profession.replace("custom_", "");
-      titles = [
-        `${name} Rookie`,
-        `${name} Apprentice`,
-        `${name} Pro`,
-        `${name} Expert`,
-        `${name} Master`,
-      ];
+    if (prof.startsWith("custom_")) {
+      const name = prof.replace("custom_", "");
+      titles = [`${name} Rookie`, `${name} Apprentice`, `${name} Pro`, `${name} Expert`, `${name} Master`];
     } else {
-      titles = professionLevels[profession] || professionLevels.webdev;
+      titles = professionLevels[prof] || professionLevels.webdev;
     }
 
     if (xp < 100)  return { level: 1, title: titles[0] };
@@ -92,29 +52,82 @@ function App() {
     return         { level: 5, title: titles[4] };
   };
 
+  const xp = user?.xp || 0;
   const { level, title } = getLevel(xp);
 
   // ── XP REWARDS ──
   const xpRewards = { easy: 10, hard: 25, legendary: 50 };
 
+  // ── LOAD QUESTS FROM API ──
+  useEffect(() => {
+    if (!token) return;
+
+    const fetchQuests = async () => {
+      try {
+        setLoading(true);
+        const data = await getQuests(token);
+        setQuests(data.quests);
+      } catch (error) {
+        console.log('Error loading quests:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchQuests();
+  }, [token]);
+
+  // ── AUTH HANDLER ──
+  const handleAuth = (newToken, newUser) => {
+    setToken(newToken);
+    setUser(newUser);
+  };
+
+  // ── LOGOUT ──
+  const handleLogout = () => {
+    localStorage.removeItem('nexus-token');
+    localStorage.removeItem('nexus-user');
+    setToken(null);
+    setUser(null);
+    setQuests([]);
+  };
+
+  // ── ADD QUEST ──
+  const addQuest = async (newQuest) => {
+    try {
+      const data = await createQuest(newQuest, token);
+      setQuests([data.quest, ...quests]);
+    } catch (error) {
+      console.log('Error adding quest:', error);
+    }
+  };
+
   // ── DELETE QUEST ──
-  const deleteQuest = (id) => {
-    setQuests(quests.filter(quest => quest.id !== id));
+  const deleteQuestHandler = async (id) => {
+    try {
+      await deleteQuest(id, token);
+      setQuests(quests.filter(q => q.id !== id));
+    } catch (error) {
+      console.log('Error deleting quest:', error);
+    }
   };
 
   // ── START QUEST ──
-  const startQuest = (id) => {
-    setQuests(quests.map(quest =>
-      quest.id === id ? { ...quest, status: "inprogress" } : quest
-    ));
+  const startQuest = async (id) => {
+    try {
+      const data = await updateQuest(id, 'inprogress', token);
+      setQuests(quests.map(q => q.id === id ? data.quest : q));
+    } catch (error) {
+      console.log('Error starting quest:', error);
+    }
   };
 
   // ── COMPLETE QUEST ──
-  const completeQuest = (id) => {
-    const quest = quests.find(q => q.id === id);
-    if (quest) {
-      const newXp = xp + xpRewards[quest.difficulty];
+  const completeQuest = async (id) => {
+    try {
+      const quest = quests.find(q => q.id === id);
       const oldLevel = getLevel(xp).level;
+      const newXp = xp + xpRewards[quest.difficulty];
       const newLevel = getLevel(newXp).level;
 
       if (newLevel > oldLevel) {
@@ -122,26 +135,34 @@ function App() {
         setTimeout(() => setLevelUpMsg(false), 3000);
       }
 
-      setXp(newXp);
-      setQuests(quests.map(q =>
-        q.id === id ? { ...q, status: "done" } : q
-      ));
+      const data = await updateQuest(id, 'done', token);
+      setQuests(quests.map(q => q.id === id ? data.quest : q));
+      setUser({ ...user, xp: newXp });
+      localStorage.setItem('nexus-user', JSON.stringify({ ...user, xp: newXp }));
+
+    } catch (error) {
+      console.log('Error completing quest:', error);
     }
   };
 
-  // ── FILTER QUESTS BY STATUS ──
+  // ── FILTER QUESTS ──
   const todoQuests = quests.filter(q => q.status === "todo");
   const inProgressQuests = quests.filter(q => q.status === "inprogress");
   const doneQuests = quests.filter(q => q.status === "done");
 
+  // ── SHOW AUTH SCREEN IF NOT LOGGED IN ──
+  if (!token || !user) {
+    return <AuthScreen onAuth={handleAuth} />;
+  }
+
   return (
     <div className="min-h-screen bg-[#0a0a0f] text-white">
 
-      {!profession && (
-        <ProfessionSelector onSelect={(p) => setProfession(p)} />
-      )}
-
-      <Header onAddClick={() => setShowForm(true)} onReset={resetApp} />
+      <Header
+        onAddClick={() => setShowForm(true)}
+        onLogout={handleLogout}
+        userName={user.name}
+      />
       <XPBar xp={xp} level={level} title={title} />
 
       {/* Level up notification */}
@@ -179,7 +200,7 @@ function App() {
                 <QuestCard
                   key={quest.id}
                   quest={quest}
-                  onDelete={deleteQuest}
+                  onDelete={deleteQuestHandler}
                   onStart={startQuest}
                   onComplete={completeQuest}
                 />
@@ -205,7 +226,7 @@ function App() {
                 <QuestCard
                   key={quest.id}
                   quest={quest}
-                  onDelete={deleteQuest}
+                  onDelete={deleteQuestHandler}
                   onStart={startQuest}
                   onComplete={completeQuest}
                 />
@@ -231,7 +252,7 @@ function App() {
                 <QuestCard
                   key={quest.id}
                   quest={quest}
-                  onDelete={deleteQuest}
+                  onDelete={deleteQuestHandler}
                   onStart={startQuest}
                   onComplete={completeQuest}
                 />
